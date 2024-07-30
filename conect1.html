@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Elements with Lines</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        .point {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ff5733;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 14px;
+        }
+
+        .lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="point" id="point1" style="left: 100px; top: 100px;">A</div>
+        <div class="point" id="point2" style="left: 300px; top: 100px;">B</div>
+        <div class="point" id="point3" style="left: 200px; top: 300px;">C</div>
+    </div>
+    <svg id="svg-lines" class="lines"></svg>
+
+    <script>
+        function connectPoints() {
+            const points = document.querySelectorAll('.point');
+            const svg = document.getElementById('svg-lines');
+            svg.innerHTML = ''; // Clear existing lines
+
+            points.forEach((point1, index) => {
+                for (let i = index + 1; i < points.length; i++) {
+                    const point2 = points[i];
+                    const x1 = point1.offsetLeft + point1.offsetWidth / 2;
+                    const y1 = point1.offsetTop + point1.offsetHeight / 2;
+                    const x2 = point2.offsetLeft + point2.offsetWidth / 2;
+                    const y2 = point2.offsetTop + point2.offsetHeight / 2;
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+                    line.setAttribute('stroke', 'black');
+                    line.setAttribute('stroke-width', '2');
+                    svg.appendChild(line);
+                }
+            });
+        }
+
+        window.onload = connectPoints;
+    </script>
+</body>
+</html>

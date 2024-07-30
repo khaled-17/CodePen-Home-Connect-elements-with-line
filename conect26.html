@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Elements with Lines</title>
+    <style>
+        .wrapper {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .wrapper svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            shape-rendering: geometricPrecision; /* For better looking lines */
+        }
+
+        .wrapper .content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            height: 100%;
+        }
+
+        .wrapper ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .wrapper li {
+            margin: 10px;
+            position: relative;
+        }
+
+        .wrapper .hook {
+            background-color: blue;
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .wrapper .hook > .delete {
+            position: absolute;
+            left: -3px;
+            top: -3px;
+            width: 21px;
+            height: 21px;
+            background-color: red;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .wrapper .hook:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <svg></svg>
+        <div class="content">
+            <ul>
+                <li>One <div class="hook" data-value="One" data-accept="First"></div></li>
+                <li>Two <div class="hook" data-value="Two" data-accept="Second"></div></li>
+                <li>Three <div class="hook" data-value="Three" data-accept="Third"></div></li>
+            </ul>
+            <ul>
+                <li><div class="hook" data-value="Second" data-accept="Two"></div> Second</li>
+                <li><div class="hook" data-value="Third" data-accept="Three"></div> Third</li>
+                <li><div class="hook" data-value="First" data-accept="One"></div> First</li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        const wrapper = document.querySelector(".wrapper");
+        const svgScene = wrapper.querySelector("svg");
+        const content = wrapper.querySelector(".content");
+
+        const sources = [];
+        let currentLine = null;
+        let drag = false;
+
+        function drawStart(e) {
+            if (!e.target.classList.contains("hook")) return;
+
+            const eventX = e.type === "mousedown" ? e.clientX - svgScene.offsetLeft : e.targetTouches[0].clientX - svgScene.offsetLeft;
+            const eventY = e.type === "mousedown" ? e.clientY - svgScene.offsetTop + window.scrollY : e.targetTouches[0].clientY - svgScene.offsetTop + window.scrollY;
+
+            const lineEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            currentLine = lineEl;
+            currentLine.setAttribute("x1", eventX);
+            currentLine.setAttribute("y1", eventY);
+            currentLine.setAttribute("x2", eventX);
+            currentLine.setAttribute("y2", eventY);
+            currentLine.setAttribute("stroke", "blue");
+            currentLine.setAttribute("stroke-width", "4");
+
+            svgScene.appendChild(currentLine);
+            sources.push({ line: lineEl, start: e.target, end: null });
+
+            drag = true;
+        }
+
+        function drawMove(e) {
+            if (!drag || currentLine === null) return;
+
+            const eventX = e.type === "mousemove" ? e.clientX - svgScene.offsetLeft : e.targetTouches[0].clientX - svgScene.offsetLeft;
+            const eventY = e.type === "mousemove" ? e.clientY - svgScene.offsetTop + window.scrollY : e.targetTouches[0].clientY - svgScene.offsetTop + window.scrollY;
+
+            currentLine.setAttribute("x2", eventX);
+            currentLine.setAttribute("y2", eventY);
+        }
+
+        function drawEnd(e) {
+            if (!drag || currentLine === null) return;
+
+            const targetHook = e.type === "mouseup" ? e.target : document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+
+            if (!targetHook.classList.contains("hook") || targetHook === sources[sources.length - 1].start) {
+                currentLine.remove();
+                sources.pop();
+            } else {
+                sources[sources.length - 1].end = targetHook;
+
+                const deleteElem = document.createElement("div");
+                deleteElem.classList.add("delete");
+                deleteElem.innerHTML = "&#10005";
+                deleteElem.dataset.position = sources.length - 1;
+                deleteElem.addEventListener("click", deleteLine);
+
+                const deleteElemCopy = deleteElem.cloneNode(true);
+                deleteElemCopy.addEventListener("click", deleteLine);
+
+                sources[sources.length - 1].start.appendChild(deleteElem);
+                sources[sources.length - 1].end.appendChild(deleteElemCopy);
+            }
+
+            drag = false;
+        }
+
+        function deleteLine(e) {
+            const position = e.target.dataset.position;
+
+            sources[position].line.remove();
+            sources[position].start.querySelector(".delete").remove();
+            sources[position].end.querySelector(".delete").remove();
+            sources[position] = null;
+        }
+
+        function checkAnswers() {
+            sources.forEach(source => {
+                if (source != null) {
+                    if (source.start.dataset.accept.trim().toLowerCase() === source.end.dataset.value.trim().toLowerCase() &&
+                        source.end.dataset.accept.trim().toLowerCase() === source.start.dataset.value.trim().toLowerCase()) {
+                        source.line.style.stroke = "green";
+                    } else {
+                        source.line.style.stroke = "red";
+                    }
+                }
+            });
+        }
+
+        wrapper.addEventListener("mousedown", drawStart);
+        wrapper.addEventListener("mousemove", drawMove);
+        wrapper.addEventListener("mouseup", drawEnd);
+
+        wrapper.addEventListener("touchstart", drawStart);
+        wrapper.addEventListener("touchmove", drawMove);
+        wrapper.addEventListener("touchend", drawEnd);
+    </script>
+</body>
+</html>
